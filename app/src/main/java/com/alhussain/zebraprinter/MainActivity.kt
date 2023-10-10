@@ -33,9 +33,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alhussain.zebraprinter.ui.theme.ZebraPrinterTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,7 +57,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PageContent(viewModel: PrinterViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+fun PageContent(viewModel: PrinterViewModel = hiltViewModel()) {
 
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     val wifiState = viewModel.uiWifiState.collectAsStateWithLifecycle()

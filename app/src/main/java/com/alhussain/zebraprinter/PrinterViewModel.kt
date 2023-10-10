@@ -2,12 +2,14 @@ package com.alhussain.zebraprinter
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class PrintersUiState(
     val ipWifiPrinter: WifiPrinterEntity? = null,
@@ -32,7 +34,8 @@ class WifiPrinterEntity(uniqueName: String, val ip: String, val port: String) :
 
 class BluetoothPrinterEntity(uniqueName: String, val mac: String) : PrinterEntity(uniqueName)
 
-class PrinterViewModel(private val printerRepository: PrinterRepository = PrinterRepository()) :
+@HiltViewModel
+class PrinterViewModel @Inject constructor(private val printerRepository: PrinterRepository) :
     ViewModel() {
 
 
@@ -87,7 +90,7 @@ class PrinterViewModel(private val printerRepository: PrinterRepository = Printe
     }
 
     fun testPrinter() {
-            printerRepository.testPrinter()
+        printerRepository.testPrinter()
 
     }
 
