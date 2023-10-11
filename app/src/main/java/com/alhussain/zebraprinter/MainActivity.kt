@@ -126,7 +126,7 @@ fun PageContent(viewModel: PrinterViewModel = hiltViewModel()) {
                 viewModel.fetchBluetoothPrinters()
                 openDialog = true
             }) {
-                Text(text = "Select Wifi Printer")
+                Text(text = "Select Bluetooth Printer")
             }
             Spacer(modifier = Modifier.height(8.dp))
             if (uiState.value.bluetoothMac != null) {

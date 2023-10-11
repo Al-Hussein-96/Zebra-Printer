@@ -55,8 +55,8 @@ android {
 
 dependencies {
 
-    implementation(files("libs/ZSDK_ANDROID_API.jar"))
     implementation(files("libs/ZSDK_ANDROID_BTLE.jar"))
+    implementation(files("libs/ZSDK_ANDROID_API.jar"))
 
 
     implementation("androidx.core:core-ktx:1.12.0")

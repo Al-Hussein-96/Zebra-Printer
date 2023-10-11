@@ -1,6 +1,8 @@
 package com.alhussain.zebraprinter
 
 import android.content.Context
+import com.zebra.sdk.btleComm.BluetoothLeConnection
+import com.zebra.sdk.btleComm.BluetoothLeDiscoverer
 import com.zebra.sdk.comm.BluetoothConnection
 import com.zebra.sdk.comm.Connection
 import com.zebra.sdk.comm.ConnectionBuilder
@@ -56,10 +58,7 @@ class PrinterRepository @Inject constructor(
 
 
     fun getBluetoothZebraPrinters() = callbackFlow {
-
-
-
-        BluetoothDiscoverer.findPrinters(context, object : DiscoveryHandler {
+        BluetoothLeDiscoverer.findPrinters(context, object : DiscoveryHandler {
             val discoveredPrinters: MutableList<DiscoveredPrinter> = mutableListOf()
             override fun foundPrinter(printer: DiscoveredPrinter) {
                 println(printer)
@@ -89,7 +88,7 @@ class PrinterRepository @Inject constructor(
                     TcpConnection(printer.ip, printer.port.toInt())
                 }
                 is BluetoothPrinterEntity -> {
-                    BluetoothConnection(printer.mac)
+                    BluetoothLeConnection(printer.mac,context)
                 }
                 else -> {
                     throw Exception("Printer not specific")
