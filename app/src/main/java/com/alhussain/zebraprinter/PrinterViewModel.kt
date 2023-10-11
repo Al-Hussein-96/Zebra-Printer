@@ -7,20 +7,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class PrintersUiState(
-    val ipWifiPrinter: WifiPrinterEntity? = null,
-    val bluetoothMac: BluetoothPrinterEntity? = null,
-    val status: String = "Disconnected",
+    val ipWifiPrinter: PrinterEntity? = null,
+    val bluetoothMac: PrinterEntity? = null,
+    val status1: String = "Disconnected",
+    val status2: String = "Disconnected",
     val userMessage: String? = null,
     val isLoading: Boolean = false,
 )
 
-data class WifiPrinterState(
-    val wifiPrinterList: List<WifiPrinterEntity> = emptyList(),
+data class PrinterState(
+    val printersEntity: List<PrinterEntity> = emptyList(),
     val isLoading: Boolean = false,
 )
 
@@ -46,24 +48,30 @@ class PrinterViewModel @Inject constructor(private val printerRepository: Printe
     val uiState = _uiState.asStateFlow()
 
 
-    private val _uiWifiState: MutableStateFlow<WifiPrinterState> = MutableStateFlow(
-        WifiPrinterState(isLoading = true)
+    private val _uiWifiState: MutableStateFlow<PrinterState> = MutableStateFlow(
+        PrinterState(isLoading = true)
     )
     val uiWifiState = _uiWifiState.asStateFlow()
 
 
-    fun fetchPrinter() = viewModelScope.launch {
-        printerRepository.getWifiZebraPrinters().catch {
+    fun fetchWifiPrinters() = viewModelScope.launch {
+        printerRepository.getWifiZebraPrinters().onStart {
             _uiWifiState.emit(
-                WifiPrinterState(
+                PrinterState(
+                    isLoading = true,
+                )
+            )
+        }.catch {
+            _uiWifiState.emit(
+                PrinterState(
                     isLoading = false,
                 )
             )
         }.collectLatest {
             _uiWifiState.emit(
-                WifiPrinterState(
+                PrinterState(
                     isLoading = false,
-                    wifiPrinterList = it.map { printer ->
+                    printersEntity = it.map { printer ->
                         WifiPrinterEntity(
                             printer.discoveryDataMap["DEVICE_UNIQUE_ID"].orEmpty(),
                             ip = printer.address,
@@ -75,16 +83,53 @@ class PrinterViewModel @Inject constructor(private val printerRepository: Printe
         }
     }
 
-    fun onSelectPrinter(ipPrinter: WifiPrinterEntity) {
-        _uiState.update {
-            it.copy(ipWifiPrinter = ipPrinter)
+    fun fetchBluetoothPrinters() = viewModelScope.launch {
+        printerRepository.getBluetoothZebraPrinters().onStart {
+            _uiWifiState.emit(
+                PrinterState(
+                    isLoading = true,
+                )
+            )
+        }.catch {
+            _uiWifiState.emit(
+                PrinterState(
+                    isLoading = false,
+                )
+            )
+        }.collectLatest {
+            _uiWifiState.emit(
+                PrinterState(
+                    isLoading = false,
+                    printersEntity = it.map { printer ->
+                        BluetoothPrinterEntity(
+                            printer.discoveryDataMap["DEVICE_UNIQUE_ID"].orEmpty(),
+                            mac = printer.address,
+                        )
+                    }
+                )
+            )
         }
     }
 
-    fun connectToPrinter(ipWifiPrinter: WifiPrinterEntity) = viewModelScope.launch {
-        printerRepository.connectToPrinter(ipWifiPrinter).collectLatest { status ->
+    fun onSelectPrinter(selectedPrinter: PrinterEntity) {
+
+        _uiState.update {
+            if (selectedPrinter is WifiPrinterEntity)
+                it.copy(ipWifiPrinter = selectedPrinter)
+            else {
+                it.copy(bluetoothMac = selectedPrinter)
+            }
+        }
+    }
+
+    fun connectToPrinter(printer: PrinterEntity) = viewModelScope.launch {
+        printerRepository.connectToPrinter(printer).collectLatest { status ->
             _uiState.update {
-                it.copy(status = status)
+                if(printer is WifiPrinterEntity)
+                it.copy(status1 = status)
+                else{
+                    it.copy(status2 = status)
+                }
             }
         }
     }

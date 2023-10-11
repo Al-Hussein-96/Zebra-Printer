@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -70,41 +71,89 @@ fun PageContent(viewModel: PrinterViewModel = hiltViewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp), verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Top
     ) {
-        OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = {
-            viewModel.fetchPrinter()
-            openDialog = true
-        }) {
-            Text(text = "Select Wifi Printer")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        if (uiState.value.ipWifiPrinter != null) {
-            Text(text = uiState.value.ipWifiPrinter?.ip.orEmpty())
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Button(modifier = Modifier.weight(1f), onClick = {
-                    viewModel.connectToPrinter(uiState.value.ipWifiPrinter!!)
-                }) {
-                    Text(text = "Connect")
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Button(modifier = Modifier.weight(1f), onClick = viewModel::testPrinter) {
-                    Text(text = "Test")
+
+        Column(
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(text = "Wifi Printer")
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = {
+                viewModel.fetchWifiPrinters()
+                openDialog = true
+            }) {
+                Text(text = "Select Wifi Printer")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            if (uiState.value.ipWifiPrinter != null) {
+                Text(text = (uiState.value.ipWifiPrinter as WifiPrinterEntity).ip)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Button(modifier = Modifier.weight(1f), onClick = {
+                        viewModel.connectToPrinter(uiState.value.ipWifiPrinter!!)
+                    }) {
+                        Text(text = "Connect")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(modifier = Modifier.weight(1f), onClick = viewModel::testPrinter) {
+                        Text(text = "Test")
+                    }
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(text = "Status: " + uiState.value.status1)
+
+
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Divider(modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth())
+        Column(
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.weight(1f)
 
-        Text(text = "Status: " + uiState.value.status)
+        ) {
+
+            Text(text = "Bluetooth Printer")
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = {
+                viewModel.fetchBluetoothPrinters()
+                openDialog = true
+            }) {
+                Text(text = "Select Wifi Printer")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            if (uiState.value.bluetoothMac != null) {
+                Text(text = (uiState.value.bluetoothMac as BluetoothPrinterEntity).mac)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Button(modifier = Modifier.weight(1f), onClick = {
+                        viewModel.connectToPrinter(uiState.value.bluetoothMac!!)
+                    }) {
+                        Text(text = "Connect")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(modifier = Modifier.weight(1f), onClick = viewModel::testPrinter) {
+                        Text(text = "Test")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(text = "Status: " + uiState.value.status2)
 
 
-
+        }
     }
 
     if (openDialog) {
-        WifiPrintersDialog(wifiState.value, onSelectPrinter = {
+        PrintersDialog(wifiState.value, onSelectPrinter = {
             viewModel.onSelectPrinter(it)
             openDialog = false
         }) {
@@ -114,9 +163,9 @@ fun PageContent(viewModel: PrinterViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun WifiPrintersDialog(
-    state: WifiPrinterState,
-    onSelectPrinter: (WifiPrinterEntity) -> Unit,
+private fun PrintersDialog(
+    state: PrinterState,
+    onSelectPrinter: (PrinterEntity) -> Unit,
     onDialogDismiss: () -> Unit
 ) {
 
@@ -140,7 +189,7 @@ private fun WifiPrintersDialog(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    state.wifiPrinterList.forEach { printer ->
+                    state.printersEntity.forEach { printer ->
                         Row(modifier = Modifier
                             .clickable {
                                 onSelectPrinter.invoke(printer)
@@ -149,7 +198,7 @@ private fun WifiPrintersDialog(
                             .border(1.dp, color = Color.Blue)
                             .padding(8.dp)
                         ) {
-                            Text(text = printer.ip)
+                            Text(text = if (printer is WifiPrinterEntity) printer.ip else if (printer is BluetoothPrinterEntity) printer.mac else "")
                         }
                     }
                 }
