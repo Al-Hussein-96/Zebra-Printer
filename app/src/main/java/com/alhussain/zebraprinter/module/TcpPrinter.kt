@@ -1,11 +1,9 @@
 package com.alhussain.zebraprinter.module
 
 import android.util.Log
-import com.alhussain.zebraprinter.Connection
-import com.alhussain.zebraprinter.PrinterEntity
+
 import com.alhussain.zebraprinter.WifiPrinterEntity
 import com.zebra.sdk.comm.TcpConnection
-import javax.inject.Inject
 import kotlin.coroutines.suspendCoroutine
 
 class TcpPrinter(private val printerEntity: WifiPrinterEntity) : AbstractPrinter() {
