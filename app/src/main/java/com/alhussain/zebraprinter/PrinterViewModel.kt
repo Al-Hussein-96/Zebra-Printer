@@ -1,5 +1,6 @@
 package com.alhussain.zebraprinter
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,7 +38,9 @@ class WifiPrinterEntity(uniqueName: String, val ip: String, val port: String) :
 class BluetoothPrinterEntity(uniqueName: String, val mac: String) : PrinterEntity(uniqueName)
 
 @HiltViewModel
-class PrinterViewModel @Inject constructor(private val printerRepository: PrinterRepository) :
+class PrinterViewModel @Inject constructor(
+    private val printerRepository: PrinterRepository,
+) :
     ViewModel() {
 
 
@@ -52,6 +55,16 @@ class PrinterViewModel @Inject constructor(private val printerRepository: Printe
         PrinterState(isLoading = true)
     )
     val uiWifiState = _uiWifiState.asStateFlow()
+
+
+    init {
+        viewModelScope.launch {
+//            zPrinter.isConnected.collectLatest {
+//                Log.i("PrinterConnectionStatus", it.toString())
+//            }
+        }
+
+    }
 
 
     fun fetchWifiPrinters() = viewModelScope.launch {
@@ -125,9 +138,9 @@ class PrinterViewModel @Inject constructor(private val printerRepository: Printe
     fun connectToPrinter(printer: PrinterEntity) = viewModelScope.launch {
         printerRepository.connectToPrinter(printer).collectLatest { status ->
             _uiState.update {
-                if(printer is WifiPrinterEntity)
-                it.copy(status1 = status)
-                else{
+                if (printer is WifiPrinterEntity)
+                    it.copy(status1 = status)
+                else {
                     it.copy(status2 = status)
                 }
             }

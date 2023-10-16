@@ -1,16 +1,13 @@
 package com.alhussain.zebraprinter
 
 import android.content.Context
-import com.zebra.sdk.btleComm.BluetoothLeConnection
+import com.alhussain.zebraprinter.module.AbstractPrinter
+import com.alhussain.zebraprinter.module.PrinterFactory
 import com.zebra.sdk.btleComm.BluetoothLeDiscoverer
-import com.zebra.sdk.comm.BluetoothConnection
 import com.zebra.sdk.comm.Connection
-import com.zebra.sdk.comm.ConnectionBuilder
+import com.zebra.sdk.comm.ConnectionException
 import com.zebra.sdk.comm.TcpConnection
-import com.zebra.sdk.comm.internal.ZebraConnector
 import com.zebra.sdk.printer.ZebraPrinterFactory
-import com.zebra.sdk.printer.ZebraPrinterLinkOs
-import com.zebra.sdk.printer.discovery.BluetoothDiscoverer
 import com.zebra.sdk.printer.discovery.DiscoveredPrinter
 import com.zebra.sdk.printer.discovery.DiscoveryHandler
 import com.zebra.sdk.printer.discovery.NetworkDiscoverer
@@ -20,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
@@ -27,10 +25,11 @@ import javax.inject.Inject
 
 class PrinterRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val factory: PrinterFactory
 ) {
 
-    private lateinit var connection: Connection
+    private lateinit var abstractPrinter: AbstractPrinter
 
 
     fun getWifiZebraPrinters() = callbackFlow {
@@ -82,34 +81,26 @@ class PrinterRepository @Inject constructor(
 
 
     fun connectToPrinter(printer: PrinterEntity) = flow {
+
+        abstractPrinter = factory.createPrinter(printer)
+
+        emit("Connecting....")
         try {
-            connection = when (printer) {
-                is WifiPrinterEntity -> {
-                    TcpConnection(printer.ip, printer.port.toInt())
-                }
-                is BluetoothPrinterEntity -> {
-                    BluetoothLeConnection(printer.mac,context)
-                }
-                else -> {
-                    throw Exception("Printer not specific")
-                }
-            }
+            val isConnected = abstractPrinter.createConnection().connect()
 
-            emit("Connecting....")
-            connection.open()
-            emit("Connected....")
 
-            println("Connection status : ${connection.isConnected}")
-        } catch (e: Exception) {
-            emit("Error while connecting.... ${e.message}")
+            emit(if (isConnected) "Connected...." else "Disconnected")
+        } catch (e: ConnectionException) {
+            emit("Error....${e.message}")
         }
+
     }.flowOn(Dispatchers.IO)
 
 
     fun testPrinter() = CoroutineScope(dispatcher).launch {
-        if (connection.isConnected) {
-            val zebraPrinter = ZebraPrinterFactory.getInstance(connection)
-            zebraPrinter.printConfigurationLabel()
+
+        if (abstractPrinter.isConnected()) {
+            abstractPrinter.testPrinter()
         }
     }
 }
