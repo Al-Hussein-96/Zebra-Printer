@@ -1,9 +1,13 @@
 package com.alhussain.zebraprinter
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zebra.sdk.comm.ConnectionException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
@@ -11,7 +15,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
+import kotlin.jvm.Throws
 
 data class PrintersUiState(
     val ipWifiPrinter: PrinterEntity? = null,
@@ -40,8 +46,12 @@ class BluetoothPrinterEntity(uniqueName: String, val mac: String) : PrinterEntit
 @HiltViewModel
 class PrinterViewModel @Inject constructor(
     private val printerRepository: PrinterRepository,
+    private val dispatcher: CoroutineDispatcher
 ) :
     ViewModel() {
+
+
+
 
 
     private val _uiState: MutableStateFlow<PrintersUiState> = MutableStateFlow(
@@ -149,6 +159,30 @@ class PrinterViewModel @Inject constructor(
 
     fun testPrinter() {
         printerRepository.testPrinter()
+    }
+
+    fun sendFileToPrinter(filePath: Uri){
+        viewModelScope.launch(dispatcher) {
+            try {
+                if(!printerRepository.isConnected()){
+                    val printer = tryToFetchPrinter()
+                    printerRepository.connectToPrinterWithSuspend(printer)
+                }
+
+                printerRepository.sendFileToPrinter(filePath).collectLatest {
+                    println("FileProgress: $it")
+                }
+            } catch (e: Exception) {
+
+            }
+        }
+
+    }
+
+    @Throws(NullPointerException::class)
+    private fun tryToFetchPrinter() : PrinterEntity {
+        return if(uiState.value.ipWifiPrinter != null) uiState.value.ipWifiPrinter!!
+        else uiState.value.bluetoothMac!!
 
     }
 

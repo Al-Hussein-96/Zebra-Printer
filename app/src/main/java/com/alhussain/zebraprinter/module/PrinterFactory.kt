@@ -18,9 +18,8 @@ class PrinterFactory @Inject constructor(@ApplicationContext private val context
             is BluetoothPrinterEntity -> {
                 BluetoothPrinter(printerEntity, context)
             }
-
             else -> {
-                throw Exception("Error not found")
+                throw Exception("Error unable to specific the printer type")
             }
 
         }

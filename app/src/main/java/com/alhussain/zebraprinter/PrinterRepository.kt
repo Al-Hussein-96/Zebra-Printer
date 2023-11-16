@@ -1,13 +1,11 @@
 package com.alhussain.zebraprinter
 
 import android.content.Context
+import android.net.Uri
 import com.alhussain.zebraprinter.module.AbstractPrinter
 import com.alhussain.zebraprinter.module.PrinterFactory
 import com.zebra.sdk.btleComm.BluetoothLeDiscoverer
-import com.zebra.sdk.comm.Connection
 import com.zebra.sdk.comm.ConnectionException
-import com.zebra.sdk.comm.TcpConnection
-import com.zebra.sdk.printer.ZebraPrinterFactory
 import com.zebra.sdk.printer.discovery.DiscoveredPrinter
 import com.zebra.sdk.printer.discovery.DiscoveryHandler
 import com.zebra.sdk.printer.discovery.NetworkDiscoverer
@@ -17,7 +15,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
@@ -79,6 +76,13 @@ class PrinterRepository @Inject constructor(
         awaitClose()
     }
 
+    suspend fun connectToPrinterWithSuspend(printer: PrinterEntity) {
+
+        abstractPrinter = factory.createPrinter(printer)
+
+        abstractPrinter.createConnection().connect()
+    }
+
 
     fun connectToPrinter(printer: PrinterEntity) = flow {
 
@@ -103,4 +107,12 @@ class PrinterRepository @Inject constructor(
             abstractPrinter.testPrinter()
         }
     }
+
+    fun isConnected(): Boolean = abstractPrinter.isConnected()
+
+
+    fun sendFileToPrinter(filePath: Uri) =
+        abstractPrinter.sendFile(context.contentResolver.openInputStream(filePath))
+
+
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.alhussain.zebraprinter.BluetoothPrinterEntity
 import com.zebra.sdk.btleComm.BluetoothLeConnection
+import com.zebra.sdk.btleComm.BluetoothLeStatusConnection
 import com.zebra.sdk.comm.Connection
 import com.zebra.sdk.printer.ZebraPrinterFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -35,6 +36,9 @@ class BluetoothPrinter(
 
         it.resumeWith(Result.success(true))
         Log.i("PrinterConnection", "Bluetooth connected")
+
+
+
     }
 
 

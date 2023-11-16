@@ -1,8 +1,14 @@
 package com.alhussain.zebraprinter
 
+import android.content.Context
+import android.database.Cursor
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,14 +36,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.core.net.toFile
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alhussain.zebraprinter.ui.theme.ZebraPrinterTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.File
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -62,6 +71,19 @@ fun PageContent(viewModel: PrinterViewModel = hiltViewModel()) {
 
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     val wifiState = viewModel.uiWifiState.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+
+            println("uri: ${uri.toString()}")
+
+            if (uri != null) {
+                viewModel.sendFileToPrinter(uri)
+            }
+        })
 
 
     var openDialog by remember {
@@ -110,9 +132,11 @@ fun PageContent(viewModel: PrinterViewModel = hiltViewModel()) {
 
 
         }
-        Divider(modifier = Modifier
-            .padding(16.dp)
-            .fillMaxWidth())
+        Divider(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        )
         Column(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -143,10 +167,17 @@ fun PageContent(viewModel: PrinterViewModel = hiltViewModel()) {
                         Text(text = "Test")
                     }
                 }
+
             }
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(text = "Status: " + uiState.value.status2)
+
+            Button(modifier = Modifier, onClick = {
+                launcher.launch(arrayOf("application/pdf"))
+            }) {
+                Text(text = "Pick File")
+            }
 
 
         }
@@ -161,6 +192,7 @@ fun PageContent(viewModel: PrinterViewModel = hiltViewModel()) {
         }
     }
 }
+
 
 @Composable
 private fun PrintersDialog(
